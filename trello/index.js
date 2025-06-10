@@ -8,8 +8,8 @@
  * @version 1.0.0
  */
 
-// Import and re-export utility functions
-export {
+// Import all functions first
+import {
   getCurrentBoardId,
   getDscToken,
   getBoard,
@@ -17,23 +17,47 @@ export {
   logWithTimestamp
 } from './utils.js';
 
-// Import and re-export bulk delete functions
-export {
+import {
   bulkDeleteCardsByLabel,
   deleteCardsByLabel
 } from './bulk-delete-cards-by-label.js';
 
-// Import and re-export bulk add labels functions
-export {
+import {
   bulkAddLabels,
   addLabelsToAllCards
 } from './bulk-add-labels.js';
 
-// Import and re-export bulk copy functions
-export {
+import {
   bulkCopyCards,
   copyAllCards
 } from './bulk-copy-cards.js';
+
+// Re-export utility functions
+export {
+  getCurrentBoardId,
+  getDscToken,
+  getBoard,
+  sleep,
+  logWithTimestamp
+};
+
+// Re-export bulk delete functions
+export {
+  bulkDeleteCardsByLabel,
+  deleteCardsByLabel
+};
+
+// Re-export bulk add labels functions
+export {
+  bulkAddLabels,
+  addLabelsToAllCards
+};
+
+// Re-export bulk copy functions
+export {
+  bulkCopyCards,
+  copyAllCards
+};
 
 /**
  * Quick access functions for common operations
@@ -52,7 +76,6 @@ export {
  * await quickDeleteByLabel(['Website'], false);
  */
 export async function quickDeleteByLabel(labelNames, dryRun = true) {
-  const { deleteCardsByLabel } = await import('./bulk-delete-cards-by-label.js');
   return deleteCardsByLabel(labelNames, 'archive', dryRun);
 }
 
@@ -69,7 +92,6 @@ export async function quickDeleteByLabel(labelNames, dryRun = true) {
  * await quickAddLabels(['General'], false);
  */
 export async function quickAddLabels(labelNames, dryRun = true) {
-  const { addLabelsToAllCards } = await import('./bulk-add-labels.js');
   return addLabelsToAllCards(labelNames, dryRun);
 }
 
@@ -86,7 +108,6 @@ export async function quickAddLabels(labelNames, dryRun = true) {
  * await quickCopyCards('YOUR_TARGET_BOARD_ID', false);
  */
 export async function quickCopyCards(targetBoardId, dryRun = true) {
-  const { copyAllCards } = await import('./bulk-copy-cards.js');
   return copyAllCards(targetBoardId, {}, dryRun);
 }
 

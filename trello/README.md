@@ -11,11 +11,14 @@ A collection of JavaScript utilities for performing bulk operations on Trello bo
 3. Import the library:
 
 ```javascript
-// Import the entire library
-const trello = await import('https://raw.githubusercontent.com/200-0K/snippets/refs/heads/master/trello/index.js');
+// Import the entire library (using jsDelivr CDN for proper MIME types)
+const trello = await import('https://cdn.jsdelivr.net/gh/200-0K/snippets@master/trello/index.js');
 
 // Or import specific functions
-const { quickDeleteByLabel, quickAddLabels, quickCopyCards } = await import('https://raw.githubusercontent.com/200-0K/snippets/refs/heads/master/trello/index.js');
+const { quickDeleteByLabel, quickAddLabels, quickCopyCards } = await import('https://cdn.jsdelivr.net/gh/200-0K/snippets@master/trello/index.js');
+
+// Alternative: Using raw.githack.com
+// const trello = await import('https://raw.githack.com/200-0K/snippets/master/trello/index.js');
 ```
 
 ## 📚 Available Operations
@@ -191,6 +194,11 @@ await trello.bulkCopyCards({
 ## 🐛 Troubleshooting
 
 ### Common Issues
+
+**"Expected a JavaScript module script but the server responded with a MIME type of 'text/plain'"**
+- This happens when using GitHub raw URLs directly
+- Solution: Use jsDelivr CDN instead: `https://cdn.jsdelivr.net/gh/200-0K/snippets@master/trello/index.js`
+- Alternative: Use raw.githack.com: `https://raw.githack.com/200-0K/snippets/master/trello/index.js`
 
 **"Unable to extract board ID from URL"**
 - Make sure you're on a Trello board page (not the dashboard)
