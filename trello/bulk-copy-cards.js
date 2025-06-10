@@ -1,215 +1,28 @@
-const boardId = window.location.pathname.match(/(?<=\/b\/).*?(?=\/)/)[0];
-const dsc = (await cookieStore.get("dsc")).value;
-const dryRun = true;
-
-const target = {
-  boardId: "Bn4rRI6Z",
-  mapList: {
-    // source -> target (Optional, default is the same list name)
-    // "Backlog": "Backlog",
-  },
-};
+import './types.js';
+import { getCurrentBoardId, getDscToken, getBoard, logWithTimestamp } from './utils.js';
 
 /**
- * Fetches a Trello board and its associated data.
- *
- * @param {string} boardId - The ID of the Trello board to fetch.
- /**
- * @returns {Promise<{
- *   id: string,
- *   cards: Array<{
- *     id: string,
- *     address: *,
- *     badges: {
- *       attachments: number,
- *       fogbugz: string,
- *       checkItems: number,
- *       checkItemsChecked: number,
- *       checkItemsEarliestDue: *,
- *       comments: number,
- *       description: boolean,
- *       due?: string,
- *       dueComplete: boolean,
- *       lastUpdatedByAi: boolean,
- *       start: *,
- *       externalSource: *,
- *       attachmentsByType: {
- *         trello: {
- *           board: number,
- *           card: number
- *         }
- *       },
- *       location: boolean,
- *       votes: number,
- *       maliciousAttachments: number,
- *       viewingMemberVoted: boolean,
- *       subscribed: boolean
- *     },
- *     cardRole: *,
- *     closed: boolean,
- *     coordinates: *,
- *     cover: {
- *       idAttachment: *,
- *       color: *,
- *       idUploadedBackground: *,
- *       size: string,
- *       brightness: string,
- *       idPlugin: *
- *     },
- *     creationMethod: *,
- *     creationMethodError: *,
- *     creationMethodLoadingStartedAt: *,
- *     dateLastActivity: string,
- *     desc: string,
- *     descData: {
- *       emoji: {}
- *     },
- *     due?: string,
- *     dueComplete: boolean,
- *     dueReminder?: number,
- *     idAttachmentCover: *,
- *     idBoard: string,
- *     idLabels: Array<string>,
- *     idList: string,
- *     idMembers: Array<*>,
- *     idShort: number,
- *     isTemplate: boolean,
- *     labels: Array<{
- *       id: string,
- *       idBoard: string,
- *       idOrganization: string,
- *       name: string,
- *       nodeId: string,
- *       color: string,
- *       uses: number
- *     }>,
- *     limits: {
- *       attachments: {
- *         perCard: {
- *           status: string,
- *           disableAt: number,
- *           warnAt: number
- *         }
- *       },
- *       checklists: {
- *         perCard: {
- *           status: string,
- *           disableAt: number,
- *           warnAt: number
- *         }
- *       },
- *       stickers: {
- *         perCard: {
- *           status: string,
- *           disableAt: number,
- *           warnAt: number
- *         }
- *       }
- *     },
- *     locationName: *,
- *     mirrorSourceId: *,
- *     name: string,
- *     nodeId: string,
- *     pinned: boolean,
- *     pos: number,
- *     shortLink: string,
- *     shortUrl: string,
- *     start: *,
- *     subscribed: boolean,
- *     url: string,
- *     stickers: Array<*>,
- *     attachments: Array<{
- *       id: string,
- *       bytes?: number,
- *       date: string,
- *       edgeColor: *,
- *       fileName: string,
- *       idMember: string,
- *       isMalicious: boolean,
- *       isUpload: boolean,
- *       mimeType: string,
- *       name: string,
- *       pos: number,
- *       url: string
- *     }>,
- *     checklists: Array<{
- *       id: string,
- *       idBoard: string,
- *       idCard: string,
- *       name: string,
- *       pos: number
- *     }>,
- *     pluginData: Array<*>,
- *     customFieldItems: Array<*>
- *   }>,
- *   labels: Array<{
- *     id: string,
- *     idBoard: string,
- *     name: string,
- *     color: string,
- *     uses: number
- *   }>,
- *   lists: Array<{
- *     id: string,
- *     closed: boolean,
- *     color: *,
- *     creationMethod: *,
- *     datasource: {
- *       filter: boolean
- *     },
- *     idBoard: string,
- *     limits: {
- *       cards: {
- *         openPerList: {
- *           status: string,
- *           disableAt: number,
- *           warnAt: number
- *         },
- *         totalPerList: {
- *           status: string,
- *           disableAt: number,
- *           warnAt: number
- *         }
- *       }
- *     },
- *     name: string,
- *     nodeId: string,
- *     pos: number,
- *     softLimit: *,
- *     subscribed: boolean,
- *     type: *
- *   }>
- * }>}
+ * Configuration options for bulk copying cards between boards
+ * @typedef {Object} BulkCopyConfig
+ * @property {string} targetBoardId - The ID of the target board to copy cards to
+ * @property {Object<string, string>} [listMapping] - Optional mapping of source list names to target list names
+ * @property {boolean} dryRun - If true, only logs what would be done without making changes
+ * @property {string} [sourceBoardId] - Optional source board ID, defaults to current board
+ * @property {function(TrelloCard): boolean} [cardFilter] - Optional function to filter which cards to copy
+ * @property {string} [keepFromSource] - Comma-separated list of properties to keep from source card
  */
-const getBoard = async (boardId) => {
-  const response = await fetch(
-    `https://trello.com/1/board/${boardId}?fields=id&cards=visible&card_fields=id%2ClabelNames%2Caddress%2Cbadges%2CcardRole%2Cclosed%2Ccoordinates%2Ccover%2CcreationMethod%2CcreationMethodError%2CcreationMethodLoadingStartedAt%2CdateLastActivity%2Cdesc%2CdescData%2Cdue%2CdueComplete%2CdueReminder%2CidAttachmentCover%2CidBoard%2CidLabels%2CidList%2CidMembers%2CidShort%2CisTemplate%2Clabels%2Climits%2ClocationName%2CmirrorSourceId%2Cname%2CnodeId%2Cpinned%2Cpos%2CshortLink%2CshortUrl%2Cstart%2Csubscribed%2Curl&card_attachments=true&card_attachment_fields=id%2Cbytes%2Cdate%2CedgeColor%2CfileName%2CidMember%2CisMalicious%2CisUpload%2CmimeType%2Cname%2Cpos%2Curl&card_checklists=all&card_checklist_fields=id%2CidBoard%2CidCard%2Cname%2Cpos&card_checklist_checkItems=none&card_customFieldItems=true&card_pluginData=true&card_stickers=true&labels=all&lists=open&list_fields=id%2Cclosed%2Ccolor%2CcreationMethod%2Cdatasource%2CidBoard%2Climits%2Cname%2CnodeId%2Cpos%2CsoftLimit%2Csubscribed%2Ctype`
-  );
-  const data = await response.json();
-  return data;
-};
 
-const sourceBoard = await getBoard(boardId);
-const targetBoard = await getBoard(target.boardId);
-
-for (const c of sourceBoard.cards) {
-  const cardId = c.id;
-  const cardList = sourceBoard.lists.find((l) => l.id === c.idList);
-
-  const targetList = targetBoard.lists.find(
-    (l) => l.name === (target.mapList[cardList.name] || cardList.name)
-  );
-
-  if (!targetList) {
-    console.log(`List ${cardList.name} not found in target board`);
-    continue;
-  }
-
-  if (dryRun) {
-    console.log(`Dry run: ${c.name} | ${cardList.name} -> ${targetList.name}`);
-    continue;
-  }
-
+/**
+ * Create a new card by copying from an existing card
+ * @param {string} sourceCardId - The ID of the source card to copy
+ * @param {string} targetListId - The ID of the target list
+ * @param {string} cardName - The name for the new card
+ * @param {string} keepFromSource - Properties to keep from source card
+ * @param {string} dsc - The DSC token for authentication
+ * @returns {Promise<any>} The response from the Trello API
+ * @throws {Error} If the card creation fails
+ */
+async function copyCard(sourceCardId, targetListId, cardName, keepFromSource, dsc) {
   const response = await fetch("https://trello.com/1/cards", {
     method: "POST",
     headers: {
@@ -217,17 +30,134 @@ for (const c of sourceBoard.cards) {
     },
     body: JSON.stringify({
       dsc,
-      idCardSource: cardId,
-      idList: targetList.id,
-      name: c.name,
-      keepFromSource: "start,due,dueReminder,labels",
+      idCardSource: sourceCardId,
+      idList: targetListId,
+      name: cardName,
+      keepFromSource,
     }),
   });
 
-  console.log(
-    `Created Card ${cardId} | ${c.name} | ${targetList.name}`,
-    await response.json()
-  );
+  if (!response.ok) {
+    throw new Error(`Failed to copy card: ${response.status} ${response.statusText}`);
+  }
+
+  return response.json();
 }
 
-console.log("Done");
+/**
+ * Find a target list by name, optionally using list mapping
+ * @param {TrelloList[]} targetLists - Array of target board lists
+ * @param {string} sourceListName - Name of the source list
+ * @param {Object<string, string>} listMapping - Mapping of source to target list names
+ * @returns {TrelloList|null} The target list or null if not found
+ */
+function findTargetList(targetLists, sourceListName, listMapping = {}) {
+  const targetListName = listMapping[sourceListName] || sourceListName;
+  return targetLists.find(list => list.name === targetListName) || null;
+}
+
+/**
+ * Bulk copy cards from one board to another
+ * @param {BulkCopyConfig} config - Configuration options
+ * @returns {Promise<{processed: number, success: number, errors: Array<{cardId: string, name: string, error: string}>, skippedLists: string[]}>} Results summary
+ */
+export async function bulkCopyCards(config) {
+  const {
+    targetBoardId,
+    listMapping = {},
+    dryRun = true,
+    sourceBoardId = getCurrentBoardId(),
+    cardFilter = null,
+    keepFromSource = "start,due,dueReminder,labels"
+  } = config;
+
+  if (!targetBoardId) {
+    throw new Error('targetBoardId must be provided');
+  }
+
+  logWithTimestamp(`Starting bulk copy operation from board ${sourceBoardId} to ${targetBoardId}`);
+  logWithTimestamp(`List mapping:`, listMapping);
+  logWithTimestamp(`Dry run: ${dryRun}`);
+
+  const dsc = await getDscToken();
+  const sourceBoard = await getBoard(sourceBoardId);
+  const targetBoard = await getBoard(targetBoardId);
+  
+  const results = {
+    processed: 0,
+    success: 0,
+    errors: [],
+    skippedLists: []
+  };
+
+  // Build a map of source lists for quick lookup
+  const sourceListsMap = new Map(sourceBoard.lists.map(list => [list.id, list]));
+
+  for (const card of sourceBoard.cards) {
+    // Apply card filter if provided
+    if (cardFilter && !cardFilter(card)) {
+      continue;
+    }
+
+    const sourceList = sourceListsMap.get(card.idList);
+    if (!sourceList) {
+      logWithTimestamp(`Warning: Source list not found for card "${card.name}"`);
+      continue;
+    }
+
+    const targetList = findTargetList(targetBoard.lists, sourceList.name, listMapping);
+    
+    if (!targetList) {
+      if (!results.skippedLists.includes(sourceList.name)) {
+        results.skippedLists.push(sourceList.name);
+        logWithTimestamp(`List "${sourceList.name}" not found in target board`);
+      }
+      continue;
+    }
+
+    results.processed++;
+
+    if (dryRun) {
+      logWithTimestamp(`Dry run: Copy "${card.name}" | ${sourceList.name} -> ${targetList.name}`);
+      results.success++;
+      continue;
+    }
+
+    try {
+      const response = await copyCard(card.id, targetList.id, card.name, keepFromSource, dsc);
+      logWithTimestamp(`Copied card "${card.name}" | ${sourceList.name} -> ${targetList.name}`, response);
+      results.success++;
+    } catch (error) {
+      const errorInfo = {
+        cardId: card.id,
+        name: card.name,
+        error: error.message
+      };
+      results.errors.push(errorInfo);
+      logWithTimestamp(`Error copying card "${card.name}": ${error.message}`);
+    }
+  }
+
+  logWithTimestamp(`Operation completed. Processed: ${results.processed}, Success: ${results.success}, Errors: ${results.errors.length}`);
+  
+  if (results.skippedLists.length > 0) {
+    logWithTimestamp(`Lists not found in target board: ${results.skippedLists.join(', ')}`);
+  }
+
+  return results;
+}
+
+/**
+ * Simple execution function for direct browser console usage
+ * @param {string} targetBoardId - The ID of the target board
+ * @param {Object<string, string>} [listMapping={}] - Optional mapping of list names
+ * @param {boolean} [dryRun=true] - Whether to perform dry run
+ * @returns {Promise<any>} Results summary
+ */
+export async function copyAllCards(targetBoardId, listMapping = {}, dryRun = true) {
+  return bulkCopyCards({
+    targetBoardId,
+    listMapping,
+    dryRun
+  });
+}
